@@ -32,8 +32,12 @@ export default async function handler(req, res) {
         return res.status(400).json({ error: 'episode_id required' });
       }
 
-      // Получаем данные эпизода через наш прокси
-      const episodeResponse = await axios.get(`http://localhost:3000/api/proxy/episodes/${episode_id}`);
+      // Получаем данные эпизода через наш прокси или напрямую
+      const host = req.headers.host || 'localhost:3000';
+      const protocol = req.headers['x-forwarded-proto'] || 'http';
+      const baseUrl = `${protocol}://${host}`;
+      
+      const episodeResponse = await axios.get(`${baseUrl}/api/proxy/episodes/${episode_id}`);
       const episodeData = episodeResponse.data;
 
       // Получаем прямые ссылки через kodikwrapper
