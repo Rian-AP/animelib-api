@@ -12,6 +12,7 @@
  *********************************************************************/
 
 import axios from 'axios';
+import { processApiResponse } from '../../../lib/imageProxyHelper';
 
 // ==================== Константы ====================
 
@@ -45,6 +46,11 @@ const MAX_REQUESTS_PER_MINUTE = 100;
 export default async function handler(req, res) {
   const { path } = req.query;
   const { method, query, headers } = req;
+  
+  // Получаем базовый URL прокси для замены image URL
+  const host = req.headers.host || 'localhost:3000';
+  const protocol = req.headers['x-forwarded-proto'] || 'http';
+  const proxyBase = `${protocol}://${host}`;
 
   // 1. Проверка HTTP метода
   if (!ALLOWED_METHODS.has(method)) {
@@ -126,9 +132,10 @@ export default async function handler(req, res) {
         res.setHeader('X-Cache', 'HIT');
         return res.status(200).send(cached.data);
       } else {
-        // Возвращаем API данные из кэша
+        // Возвращаем API данные из кэша (с заменой image URL)
+        const processedData = processApiResponse(cached.data, proxyBase);
         res.setHeader('X-Cache', 'HIT');
-        return res.status(200).json(cached.data);
+        return res.status(200).json(processedData);
       }
     }
 
@@ -226,10 +233,14 @@ export default async function handler(req, res) {
     } else {
       // API запрос - парсим JSON
       const jsonData = JSON.parse(Buffer.from(originalResponse.data).toString('utf-8'));
-      res.setHeader('X-Cache', 'MISS');
-      res.status(originalResponse.status).json(jsonData);
       
-      // Сохраняем успешные API запросы в кэш
+      // Заменяем image URL на прокси URL
+      const processedData = processApiResponse(jsonData, proxyBase);
+      
+      res.setHeader('X-Cache', 'MISS');
+      res.status(originalResponse.status).json(processedData);
+      
+      // Сохраняем успешные API запросы в кэш (оригинальные данные)
       if (method === 'GET' && originalResponse.status === 200) {
         cache.set(cacheKey, {
           timestamp: now,
