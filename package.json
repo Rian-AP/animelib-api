@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "next build", 
     "start": "next start",
     "lint": "eslint"
   },
@@ -12,7 +12,7 @@
     "axios": "^1.13.1",
     "kodikwrapper": "^3.0.5",
     "next": "16.0.1",
-    "puppeteer": "^21.6.1",
+    "puppeteer": "^23.8.0",
     "react": "19.2.0",
     "react-dom": "19.2.0"
   },
