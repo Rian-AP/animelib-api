@@ -40,3 +40,15 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 .env
+
+# test files
+test_*.json
+test_*.jpg
+*_kodik_*.json
+*_vercel_*.json
+*_episode_*.json
+episode.json
+episode_*.json
+homepage_check.html
+kodik_response.json
+TEST_RESULTS.md
