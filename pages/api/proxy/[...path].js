@@ -398,8 +398,9 @@ async function tryYummyAniFallback(originalPath, query) {
     else if (originalPath.includes('news')) {
       yummyPath = 'posts';
     }
-    // CDNLibs: /anime/{id} -> YummyAnime: /anime/{id}
-    else if (originalPath.match(/\/anime\/\d+/) || originalPath.match(/^\d+/)) {
+    // CDNLibs: /anime/{id} или /anime/{id}--{slug} -> YummyAnime: /anime/{id}
+    else if (originalPath.match(/anime\/\d+/) || originalPath.match(/^\d+/)) {
+      // Извлекаем ID даже если есть slug (например: 21806--u-menya-net-lyubovnicy)
       const id = originalPath.match(/\d+/)?.[0];
       yummyPath = `anime/${id}`;
       yummyParams = {};
@@ -623,6 +624,7 @@ export default async function handler(req, res) {
       // НОВОЕ: Если CDNLibs вернул ошибку ИЛИ пустой список, пробуем YummyAnime
       const isSearchRequest = originalPath.includes('search') || query.q || query.query;
       const isEpisodesRequest = originalPath.includes('episodes');
+      const isAnimeRequest = originalPath.match(/anime\/\d+/);
       
       let originalData = null;
       try {
@@ -638,8 +640,11 @@ export default async function handler(req, res) {
         console.warn('Failed to parse original response as JSON');
       }
       
-      // Проверка на пустые данные для поиска и эпизодов
-      const isEmptyData = originalData && originalData.data && Array.isArray(originalData.data) && originalData.data.length === 0 && (isSearchRequest || isEpisodesRequest);
+      // Проверка на пустые данные для поиска, эпизодов и конкретного аниме
+      const isEmptyData = originalData && (
+        (Array.isArray(originalData.data) && originalData.data.length === 0 && (isSearchRequest || isEpisodesRequest)) ||
+        (!originalData.data && isAnimeRequest) // Для anime запроса если data пустой/null
+      );
 
       // Если не удалось распарсить JSON (например вернулся HTML), считаем это ошибкой и пробуем fallback
       const isInvalidResponse = !originalData && originalResponse.status === 200 && !isImageRequest;
